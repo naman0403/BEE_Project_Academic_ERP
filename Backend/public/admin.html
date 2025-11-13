@@ -1,0 +1,174 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    /* Fade-in animation for tab content */
+    .fade-in {
+      animation: fadeIn 0.5s ease forwards;
+    }
+
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+
+    /* Smooth hover for buttons */
+    .btn-hover:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    }
+
+    /* Table row hover */
+    .row-hover:hover {
+      background-color: #e0f2fe;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+  <!-- Header -->
+  <header class="bg-blue-100 text-blue-900 p-6 text-center shadow-md rounded-b-lg">
+    <h1 class="text-3xl font-bold tracking-tight">Admin Dashboard</h1>
+    <p class="mt-1 font-medium">Welcome, Admin</p>
+  </header>
+
+  <!-- Navigation -->
+  <nav class="flex justify-center bg-blue-50 text-blue-900 mt-6 shadow rounded-lg mx-4 md:mx-20 overflow-hidden">
+    <button class="flex-1 py-3 hover:bg-blue-200 focus:bg-blue-200 font-semibold tab-btn" data-tab="dashboard">Dashboard</button>
+    <button class="flex-1 py-3 hover:bg-blue-200 focus:bg-blue-200 font-semibold tab-btn" data-tab="students">Students</button>
+    <button class="flex-1 py-3 hover:bg-blue-200 focus:bg-blue-200 font-semibold tab-btn" data-tab="assign">Assign Batch</button>
+  </nav>
+
+  <main class="mx-4 md:mx-20 mt-6 space-y-6">
+
+    <!-- Dashboard Overview -->
+    <section class="tab-content fade-in bg-white p-6 rounded-lg shadow-md mb-6" id="dashboard">
+      <h2 class="text-2xl font-semibold mb-4 text-blue-800">Dashboard Overview</h2>
+      <p class="text-gray-700">This is the main dashboard. Use the tabs above to view students or assign batches. Everything is organized for easy management.</p>
+    </section>
+
+    <!-- Students Table -->
+    <section class="tab-content fade-in bg-white p-6 rounded-lg shadow-md mb-6 hidden" id="students">
+      <h2 class="text-2xl font-semibold mb-4 text-blue-800">All Students</h2>
+      <div class="overflow-x-auto">
+        <table class="min-w-full border-collapse text-gray-800">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="p-3 border border-gray-200 text-left">Name</th>
+              <th class="p-3 border border-gray-200 text-left">Email</th>
+              <th class="p-3 border border-gray-200 text-left">Batch</th>
+            </tr>
+          </thead>
+          <tbody id="studentsTableBody">
+            <!-- Rows will be populated dynamically -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Assign Batch Form -->
+    <section class="tab-content fade-in bg-white p-6 rounded-lg shadow-md hidden" id="assign">
+      <h2 class="text-2xl font-semibold mb-4 text-blue-800">Assign Batch</h2>
+      <form id="assignForm" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+        <div class="relative">
+          <input type="email" placeholder=" " id="studentEmail" class="peer w-full border-b-2 border-gray-300 focus:border-blue-400 outline-none py-2 text-gray-800" required/>
+          <label for="studentEmail" class="absolute left-0 top-0 text-gray-500 text-sm peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-gray-400 peer-focus:-top-2 peer-focus:text-blue-600 transition-all">Student Email</label>
+        </div>
+
+        <div class="relative">
+          <input type="text" placeholder=" " id="batch" class="peer w-full border-b-2 border-gray-300 focus:border-blue-400 outline-none py-2 text-gray-800" required/>
+          <label for="batch" class="absolute left-0 top-0 text-gray-500 text-sm peer-placeholder-shown:top-2.5 peer-placeholder-shown:text-gray-400 peer-focus:-top-2 peer-focus:text-blue-600 transition-all">Batch</label>
+        </div>
+
+        <button type="submit" class="col-span-full bg-green-300 hover:bg-green-400 text-green-900 font-semibold py-3 rounded-lg shadow-md transition btn-hover">Assign Batch</button>
+      </form>
+    </section>
+
+  </main>
+
+  <script>
+  // Tab switching
+  const tabs = document.querySelectorAll('.tab-btn');
+  const contents = document.querySelectorAll('.tab-content');
+  tabs.forEach(tab => {
+    tab.addEventListener('click', () => {
+      contents.forEach(c => c.classList.add('hidden'));
+      const selected = document.getElementById(tab.dataset.tab);
+      selected.classList.remove('hidden');
+      selected.classList.add('fade-in');
+      setTimeout(() => selected.classList.remove('fade-in'), 500);
+
+      if (tab.dataset.tab === 'students') loadStudents();
+    });
+  });
+
+  // Fetch all students
+  async function loadStudents() {
+    const tbody = document.querySelector('#students tbody');
+    tbody.innerHTML = '<tr><td colspan="3">Loading...</td></tr>';
+    try {
+      const res = await fetch('/admin/students', { credentials: 'include' });
+      const students = await res.json();
+      if (!students.length) {
+        tbody.innerHTML = '<tr><td colspan="3">No students found</td></tr>';
+        return;
+      }
+      tbody.innerHTML = '';
+      students.forEach(student => {
+        const tr = document.createElement('tr');
+        tr.classList.add('row-hover');
+        tr.innerHTML = `<td class="p-3 border border-gray-200">${student.name}</td>
+                        <td class="p-3 border border-gray-200">${student.email}</td>
+                        <td class="p-3 border border-gray-200">${student.batch || '-'}</td>`;
+        tbody.appendChild(tr);
+      });
+    } catch (err) {
+      console.error('Error fetching students:', err);
+      tbody.innerHTML = '<tr><td colspan="3">Error loading students</td></tr>';
+    }
+  }
+
+  // Assign batch form
+  const assignForm = document.querySelector('#assign form');
+  assignForm.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('studentEmail').value.trim();
+    const batch = document.getElementById('batch').value.trim();
+    if (!email || !batch) return alert('Enter both email and batch');
+
+    try {
+      // Get all students to find ID
+      const resStudents = await fetch('/admin/students', { credentials: 'include' });
+      const students = await resStudents.json();
+      const student = students.find(s => s.email === email);
+      if (!student) return alert('Student not found');
+
+      // Assign batch
+      const resAssign = await fetch(`/admin/students/${student._id}/batch`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ batch })
+      });
+      const data = await resAssign.json();
+      alert(data.message || 'Batch assigned');
+
+      // Refresh students table
+      if (!document.getElementById('students').classList.contains('hidden')) loadStudents();
+
+      assignForm.reset();
+    } catch (err) {
+      console.error('Error assigning batch:', err);
+      alert('Error assigning batch');
+    }
+  });
+
+  // Load students on page load for admin tab
+  loadStudents();
+</script>
+</body>
+</html>

@@ -1,0 +1,128 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OTP Verification - ClassSync</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body class="min-h-screen bg-background relative overflow-hidden transform-3d">
+    <div class="absolute inset-0 morph-bg opacity-25"></div>
+
+    <div class="floating-shape"></div>
+    <div class="floating-shape"></div>
+    <div class="floating-shape"></div>
+    <div class="floating-shape"></div>
+
+    <div class="absolute inset-0 opacity-10">
+        <div class="h-full w-full grid-pattern"></div>
+    </div>
+
+    <div class="relative z-10 flex items-center justify-center min-h-screen p-4">
+        <div class="w-full max-w-4xl grid lg:grid-cols-2 gap-8 items-center">
+            <!-- Left Side - Branding/Visual -->
+            <div class="hidden lg:flex flex-col items-center justify-center space-y-8 slide-in-from-corner">
+                <div class="relative">
+                    <div class="w-32 h-32 rounded-full bg-gradient-to-br from-primary via-secondary to-foreground pulse-glow flex items-center justify-center">
+                        <div class="w-20 h-20 rounded-full bg-background flex items-center justify-center">
+                            <svg class="w-12 h-12 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <div class="absolute -top-4 -right-4 w-8 h-8 rounded-full bg-primary animate-bounce"></div>
+                    <div class="absolute -bottom-4 -left-4 w-6 h-6 rounded-full bg-secondary animate-pulse"></div>
+                </div>
+
+                <div class="text-center space-y-4">
+                    <h1 class="text-5xl font-bold bg-gradient-to-r from-primary via-secondary to-foreground bg-clip-text text-transparent">
+                        ClassSync
+                    </h1>
+                    <p class="text-xl text-muted-foreground max-w-md">
+                        Secure access verification for your academic portal
+                    </p>
+                    <div class="flex space-x-4 justify-center">
+                        <div class="w-3 h-3 rounded-full bg-primary animate-pulse"></div>
+                        <div class="w-3 h-3 rounded-full bg-secondary animate-pulse" style="animation-delay: 0.5s;"></div>
+                        <div class="w-3 h-3 rounded-full bg-foreground animate-pulse" style="animation-delay: 1s;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Side - OTP Form -->
+            <div class="relative">
+                <!-- Mobile branding -->
+                <div class="lg:hidden text-center mb-8 float-animation">
+                    <div class="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-primary to-secondary mb-4 pulse-glow">
+                        <div class="w-12 h-12 rounded-full bg-background flex items-center justify-center">
+                            <svg class="w-6 h-6 text-primary" fill="currentColor" viewBox="0 0 24 24">
+                                <path d="M12 1L3 5v6c0 5.55 3.84 10.74 9 12 5.16-1.26 9-6.45 9-12V5l-9-4z" />
+                            </svg>
+                        </div>
+                    </div>
+                    <h1 class="text-3xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                        ClassSync
+                    </h1>
+                </div>
+
+                <div class="relative enhanced-bounce-slide-in">
+                    <div class="glass card-3d p-8 relative overflow-hidden hexagon-form">
+                        <!-- Form header -->
+                        <div class="text-center mb-8">
+                            <div class="flex items-center justify-center space-x-2 mb-4">
+                                <div class="w-4 h-4 rounded-full bg-primary"></div>
+                                <h2 class="text-2xl font-bold text-foreground">Verify Your Identity</h2>
+                                <div class="w-4 h-4 rounded-full bg-secondary"></div>
+                            </div>
+                            <div class="w-20 h-1 bg-gradient-to-r from-primary to-secondary mx-auto rounded-full mb-4"></div>
+                            <p class="text-muted-foreground">Enter the 4-digit code sent to your academic email</p>
+                        </div>
+
+                        <form id="otpForm" class="space-y-8">
+                            <!-- OTP Input Fields -->
+                            <div class="flex justify-center space-x-4">
+                                <input type="text" maxlength="1" class="otp-input" data-index="0" style="transform: rotate(1deg);">
+                                <input type="text" maxlength="1" class="otp-input" data-index="1" style="transform: rotate(-1deg);">
+                                <input type="text" maxlength="1" class="otp-input" data-index="2" style="transform: rotate(1deg);">
+                                <input type="text" maxlength="1" class="otp-input" data-index="3" style="transform: rotate(-1deg);">
+                            </div>
+
+                            <!-- Timer and Resend -->
+                            <div class="text-center space-y-4">
+                                <p id="timerText" class="text-muted-foreground">
+                                    Resend code in <span id="countdown" class="text-primary font-semibold">60s</span>
+                                </p>
+                                <button id="resendBtn" type="button" class="text-secondary hover:text-secondary/80 transition-colors font-semibold hidden">
+                                    Resend Code
+                                </button>
+                            </div>
+
+                            <!-- Submit Button -->
+                            <div class="pt-4">
+                                <button id="verifyBtn" type="submit" disabled class="submit-button opacity-50">
+                                    <span id="verifyText">Verify & Continue</span>
+                                    <div id="verifySpinner" class="hidden items-center space-x-2">
+                                        <div class="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin"></div>
+                                        <span>Verifying...</span>
+                                    </div>
+                                </button>
+                            </div>
+
+                            <!-- Back to Sign In -->
+                            <div class="text-center">
+                                <button type="button" onclick="window.location.href='index.html'" class="text-muted-foreground hover:text-foreground transition-colors">
+                                    ← Back to Sign In
+                                </button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="otp.js"></script>
+</body>
+</html>

@@ -1,0 +1,193 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teacher Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
+</head>
+
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+  <!-- Header -->
+  <header class="bg-green-100 text-green-900 p-6 text-center shadow-md rounded-b-lg">
+    <h1 class="text-3xl font-bold tracking-tight">Teacher Dashboard</h1>
+    <p class="mt-1 font-medium" id="welcome">Loading...</p>
+  </header>
+
+  <!-- Navigation -->
+  <nav class="flex justify-center bg-green-50 text-green-900 mt-6 shadow rounded-lg mx-4 md:mx-20 overflow-hidden">
+    <button class="flex-1 py-3 hover:bg-green-200 font-semibold tab-btn" data-tab="dashboard">Dashboard</button>
+    <button class="flex-1 py-3 hover:bg-green-200 font-semibold tab-btn" data-tab="students">Students</button>
+    <button class="flex-1 py-3 hover:bg-green-200 font-semibold tab-btn" data-tab="attendance">Attendance</button>
+    <button class="flex-1 py-3 hover:bg-green-200 font-semibold tab-btn" data-tab="marks">Marks</button>
+    <button class="flex-1 py-3 hover:bg-green-200 font-semibold tab-btn" data-tab="updates">Updates</button>
+  </nav>
+
+  <main class="mx-4 md:mx-20 mt-6 space-y-6">
+
+    <!-- Dashboard -->
+    <section class="tab-content bg-white p-6 rounded-lg shadow-md mb-6" id="dashboard">
+      <h2 class="text-2xl font-semibold mb-4 text-green-800">Dashboard Overview</h2>
+      <p class="text-gray-700">Welcome teacher, manage students, mark attendance, post updates, and assign marks.</p>
+    </section>
+
+    <!-- Students -->
+    <section class="tab-content hidden bg-white p-6 rounded-lg shadow-md mb-6" id="students">
+      <h2 class="text-2xl font-semibold mb-4 text-green-800">Students List</h2>
+      <div class="overflow-x-auto">
+        <table class="min-w-full border-collapse text-gray-800" id="studentsTable">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="p-3 border border-gray-200 text-left">Name</th>
+              <th class="p-3 border border-gray-200 text-left">Email</th>
+              <th class="p-3 border border-gray-200 text-left">Batch</th>
+              <th class="p-3 border border-gray-200 text-left">Marks</th>
+            </tr>
+          </thead>
+          <tbody></tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Attendance -->
+    <section class="tab-content hidden bg-white p-6 rounded-lg shadow-md mb-6" id="attendance">
+      <h2 class="text-2xl font-semibold mb-4 text-green-800">Mark Attendance</h2>
+      <form id="attendanceForm" class="space-y-4">
+        <input type="email" id="studentEmailA" placeholder="Student Email" class="w-full border p-2 rounded" required>
+        <select id="status" class="w-full border p-2 rounded">
+          <option value="present">Present</option>
+          <option value="absent">Absent</option>
+        </select>
+        <button class="bg-green-300 hover:bg-green-400 py-2 px-4 rounded-lg">Submit</button>
+      </form>
+    </section>
+
+    <!-- Marks -->
+    <section class="tab-content hidden bg-white p-6 rounded-lg shadow-md mb-6" id="marks">
+      <h2 class="text-2xl font-semibold mb-4 text-green-800">Add Marks</h2>
+      <form id="marksForm" class="space-y-4">
+        <input type="email" id="studentEmailM" placeholder="Student Email" class="w-full border p-2 rounded" required>
+        <input type="text" id="subject" placeholder="Subject" class="w-full border p-2 rounded" required>
+        <input type="number" id="marks" placeholder="Marks" class="w-full border p-2 rounded" required>
+        <button class="bg-green-300 hover:bg-green-400 py-2 px-4 rounded-lg">Submit</button>
+      </form>
+    </section>
+
+    <!-- Updates -->
+    <section class="tab-content hidden bg-white p-6 rounded-lg shadow-md mb-6" id="updates">
+      <h2 class="text-2xl font-semibold mb-4 text-green-800">Post Update</h2>
+      <form id="updateForm" class="space-y-4">
+        <input type="text" id="title" placeholder="Update Title" class="w-full border p-2 rounded" required>
+        <textarea id="content" placeholder="Update Content" class="w-full border p-2 rounded" required></textarea>
+        <button class="bg-green-300 hover:bg-green-400 py-2 px-4 rounded-lg">Post</button>
+      </form>
+    </section>
+
+  </main>
+
+  <script>
+    const API = "http://localhost:5000/teacher";
+
+    // Tab switcher
+    const tabs = document.querySelectorAll('.tab-btn');
+    const contents = document.querySelectorAll('.tab-content');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        contents.forEach(c => c.classList.add('hidden'));
+        document.getElementById(tab.dataset.tab).classList.remove('hidden');
+      });
+    });
+
+    // Fetch Dashboard Welcome
+    async function loadDashboard() {
+      try {
+        const res = await axios.get(API + "/", { withCredentials: true });
+        document.getElementById("welcome").innerText = res.data.message;
+      } catch (err) {
+        document.getElementById("welcome").innerText = "Error loading dashboard";
+      }
+    }
+
+    // Fetch Students
+    async function loadStudents() {
+      try {
+        const res = await axios.get(API + "/students", { withCredentials: true });
+        const tbody = document.querySelector("#studentsTable tbody");
+        tbody.innerHTML = "";
+        res.data.students.forEach(s => {
+          const marksText = s.marks && s.marks.length
+            ? s.marks.map(m => `${m.subject}: ${m.marks}`).join(", ")
+            : "-";
+          tbody.innerHTML += `
+            <tr>
+              <td class="p-3 border">${s.name}</td>
+              <td class="p-3 border">${s.email}</td>
+              <td class="p-3 border">${s.batch || "-"}</td>
+              <td class="p-3 border">${marksText}</td>
+            </tr>`;
+        });
+      } catch (err) {
+        console.error(err);
+      }
+    }
+
+    // Attendance Form
+    document.getElementById("attendanceForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const studentEmail = document.getElementById("studentEmailA").value;
+      const status = document.getElementById("status").value;
+      try {
+        await axios.post(API + "/attendance", { studentEmail, status }, { withCredentials: true });
+        alert("Attendance Marked!");
+        document.getElementById("attendanceForm").reset();
+        loadStudents();
+      } catch (err) {
+        console.error(err);
+        alert("Error marking attendance");
+      }
+    });
+
+    // Marks Form
+    document.getElementById("marksForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+
+      const studentEmail = document.getElementById("studentEmailM").value;
+      const subject = document.getElementById("subject").value;
+      const marks = Number(document.getElementById("marks").value); 
+
+      try {
+        await axios.post(API + "/marks", { studentEmail, subject, marks }, { withCredentials: true });
+        alert("Marks Added!");
+      } catch (err) {
+        console.error(err);
+        alert("Error adding marks");
+      }
+    });
+
+
+    // Updates Form
+    document.getElementById("updateForm").addEventListener("submit", async (e) => {
+      e.preventDefault();
+      const title = document.getElementById("title").value;
+      const content = document.getElementById("content").value;
+      try {
+        await axios.post(API + "/updates", { title, content }, { withCredentials: true });
+        alert("Update Posted!");
+        document.getElementById("updateForm").reset();
+      } catch (err) {
+        console.error(err);
+        alert("Error posting update");
+      }
+    });
+
+    // Initial Load
+    loadDashboard();
+    loadStudents();
+  </script>
+
+</body>
+
+</html>

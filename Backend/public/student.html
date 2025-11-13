@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Student Dashboard</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    .fade-in {
+      animation: fadeIn 0.5s ease forwards;
+    }
+    @keyframes fadeIn {
+      from { opacity: 0; transform: translateY(10px); }
+      to { opacity: 1; transform: translateY(0); }
+    }
+    .row-hover:hover {
+      background-color: #e0f2fe;
+    }
+  </style>
+</head>
+<body class="bg-gray-50 text-gray-800 font-sans">
+
+  <!-- Header -->
+  <header class="bg-blue-100 text-blue-900 p-6 text-center shadow-md rounded-b-lg">
+    <h1 class="text-3xl font-bold tracking-tight">Student Dashboard</h1>
+    <p class="mt-1 font-medium">Welcome, <span id="studentName">[Student Name]</span></p>
+  </header>
+
+  <!-- Tabs -->
+  <div class="flex justify-center bg-blue-50 text-blue-900 mt-6 shadow rounded-lg mx-4 md:mx-20 overflow-hidden">
+    <button class="flex-1 py-3 hover:bg-blue-200 focus:bg-blue-200 font-semibold tab-btn" data-tab="dashboard">Dashboard</button>
+    <button class="flex-1 py-3 hover:bg-blue-200 focus:bg-blue-200 font-semibold tab-btn" data-tab="attendance">Attendance</button>
+    <button class="flex-1 py-3 hover:bg-blue-200 focus:bg-blue-200 font-semibold tab-btn" data-tab="marks">Marks</button>
+    <button class="flex-1 py-3 hover:bg-blue-200 focus:bg-blue-200 font-semibold tab-btn" data-tab="updates">Updates</button>
+  </div>
+
+  <main class="mx-4 md:mx-20 mt-6 space-y-6">
+
+    <!-- Dashboard Overview -->
+    <section class="tab-content fade-in bg-white p-6 rounded-lg shadow-md mb-6" id="dashboard">
+      <h2 class="text-2xl font-semibold mb-4 text-blue-800">Dashboard Overview</h2>
+      <p class="text-gray-700">Here you can view your attendance, marks, and updates from your teachers. Stay on top of your academic progress!</p>
+    </section>
+
+    <!-- Attendance -->
+    <section class="tab-content fade-in bg-white p-6 rounded-lg shadow-md mb-6 hidden" id="attendance">
+      <h2 class="text-2xl font-semibold mb-4 text-blue-800">Attendance</h2>
+      <div class="overflow-x-auto">
+        <table class="min-w-full border-collapse text-gray-800">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="p-3 border border-gray-200 text-left">Date</th>
+              <th class="p-3 border border-gray-200 text-left">Status</th>
+            </tr>
+          </thead>
+          <tbody id="attendanceTableBody">
+            <!-- Attendance rows will be populated here -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Marks -->
+    <section class="tab-content fade-in bg-white p-6 rounded-lg shadow-md mb-6 hidden" id="marks">
+      <h2 class="text-2xl font-semibold mb-4 text-blue-800">Marks</h2>
+      <div class="overflow-x-auto">
+        <table class="min-w-full border-collapse text-gray-800">
+          <thead>
+            <tr class="bg-gray-100">
+              <th class="p-3 border border-gray-200 text-left">Subject</th>
+              <th class="p-3 border border-gray-200 text-left">Marks</th>
+            </tr>
+          </thead>
+          <tbody id="marksTableBody">
+            <!-- Marks rows will be populated here -->
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Updates -->
+    <section class="tab-content fade-in bg-white p-6 rounded-lg shadow-md hidden" id="updates">
+      <h2 class="text-2xl font-semibold mb-4 text-blue-800">Updates</h2>
+      <div id="updatesContainer" class="space-y-4">
+        <!-- Updates will be populated here -->
+      </div>
+    </section>
+
+  </main>
+
+  <script>
+    // Tab switching
+    const tabs = document.querySelectorAll('.tab-btn');
+    const contents = document.querySelectorAll('.tab-content');
+    tabs.forEach(tab => {
+      tab.addEventListener('click', () => {
+        contents.forEach(c => c.classList.add('hidden'));
+        const selected = document.getElementById(tab.dataset.tab);
+        selected.classList.remove('hidden');
+        selected.classList.add('fade-in');
+        setTimeout(() => selected.classList.remove('fade-in'), 500);
+      });
+    });
+
+    // Fetch student data from backend
+    async function fetchStudentData() {
+      try {
+        const res = await fetch('/student', { credentials: 'include' });
+        const data = await res.json();
+        const student = data.student;
+
+        // Set name
+        document.getElementById('studentName').textContent = student.name;
+
+        // Populate attendance
+        const attendanceBody = document.getElementById('attendanceTableBody');
+        attendanceBody.innerHTML = '';
+        for (const [date, status] of Object.entries(student.attendance)) {
+          const tr = document.createElement('tr');
+          tr.classList.add('row-hover');
+          tr.innerHTML = `<td class="p-3 border border-gray-200">${date}</td>
+                          <td class="p-3 border border-gray-200">${status}</td>`;
+          attendanceBody.appendChild(tr);
+        }
+
+        // Populate marks
+        const marksBody = document.getElementById('marksTableBody');
+        marksBody.innerHTML = '';
+        for (const [subject, mark] of Object.entries(student.marks)) {
+          const tr = document.createElement('tr');
+          tr.classList.add('row-hover');
+          tr.innerHTML = `<td class="p-3 border border-gray-200">${subject}</td>
+                          <td class="p-3 border border-gray-200">${mark}</td>`;
+          marksBody.appendChild(tr);
+        }
+
+        // Populate updates
+        const updatesContainer = document.getElementById('updatesContainer');
+        updatesContainer.innerHTML = '';
+        for (const update of Object.values(student.updates)) {
+          const div = document.createElement('div');
+          div.classList.add('bg-blue-50', 'p-4', 'rounded-lg', 'shadow-sm');
+          div.innerHTML = `<h3 class="font-semibold text-blue-800 mb-1">${update.title}</h3>
+                           <p class="text-gray-700">${update.content}</p>`;
+          updatesContainer.appendChild(div);
+        }
+
+      } catch (err) {
+        console.error('Failed to fetch student data:', err);
+      }
+    }
+
+    // Fetch data on page load
+    fetchStudentData();
+  </script>
+
+</body>
+</html>
