@@ -1,30 +1,41 @@
 const express = require('express');
 const protectStudent = require('../middleware/studentMiddleware');
 const User = require('../model/User');
+const Attendance = require('../model/Attendance');
+const Marks = require('../model/Marks');
+const Notice = require('../model/Notice');
 
 const router = express.Router();
 
-// Get Student Dashboard
+// student dashboard
 router.get('/', protectStudent, async (req, res) => {
     try {
-        const student = await User.findById(req.user._id)
-            .select('name email batch attendance marks updates');
+        const student = await User.findById(req.user._id).select('name email batch role');
+        if (!student) {
+            return res.status(404).json({ message: 'Student not found' });
+        }
 
-            const attendanceObj = {};
-            student.attendance.forEach(record => {
-            attendanceObj[record.date] = record.status;
+        const attendanceRecords = await Attendance.find({ student: req.user._id }).select('date status');
+        const marksRecords = await Marks.find({ student: req.user._id }).select('subject marks');
+        const notices = await Notice.find().sort({ date: -1 }); 
+
+        const attendanceObj = {};
+        attendanceRecords.forEach(record => {
+            const date = new Date(record.date).toLocaleDateString('en-IN');
+            attendanceObj[date] = record.status;
         });
 
         const marksObj = {};
-        student.marks.forEach(record => {
+        marksRecords.forEach(record => {
             marksObj[record.subject] = record.marks;
         });
 
         const updatesObj = {};
-        student.updates.forEach((record, index) => {
+        notices.forEach((record, index) => {
             updatesObj[`update_${index + 1}`] = {
                 title: record.title,
-                content: record.content
+                content: record.description,
+                date: record.date
             };
         });
 
@@ -40,7 +51,7 @@ router.get('/', protectStudent, async (req, res) => {
         });
 
     } catch (err) {
-        console.error(err);
+        console.error('Error in student dashboard route:', err);
         res.status(500).json({ message: 'Server error' });
     }
 });

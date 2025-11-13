@@ -165,7 +165,7 @@
       tbody.innerHTML = '';
 
       try {
-        const response = await fetch(`http://localhost:4000/analytics/teacher/${teacherId}`);
+        const response = await fetch(`http://localhost:5000/analytics/teacher/${teacherId}`);
         if (!response.ok) throw new Error('Failed to fetch data.');
 
         const data = await response.json();

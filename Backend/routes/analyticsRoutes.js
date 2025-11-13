@@ -6,7 +6,7 @@ const mongoose = require('mongoose');
 
 const router = express.Router();
 
-router.get('/analytics/teacher/:teacherId', async (req, res) => {
+router.get('/teacher/:teacherId', async (req, res) => {
     try {
         const teacherId = req.params.teacherId;
         const from = req.query.from ? new Date(req.query.from) : new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
